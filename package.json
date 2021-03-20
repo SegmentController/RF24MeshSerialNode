@@ -1,0 +1,15 @@
+{
+  "name": "RF24MeshSerialNode",
+  "version": "0.9.0",
+  "description": "Node.js library for RF24MeshSerial",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "BCsabaEngine",
+  "license": "ISC",
+  "dependencies": {
+    "serialport": "^9.0.7"
+  }
+}
