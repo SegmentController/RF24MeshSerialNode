@@ -5,62 +5,81 @@ const Readline = require('@serialport/parser-readline');
 
 class RF24MeshSerialNode extends EventEmitter {
   port = null
-  echo = false
+  timeout = 2500
 
-  createParser() {
-    const parser = this.port.pipe(new Readline({ delimiter: '\r\n' }))
-    parser.on('data', this.onLineData.bind(this))
-  }
-
-  constructor(port, echo) {
+  constructor(port, options) {
     super()
 
     this.port = port
-    this.echo = echo;
+    this.timeout = options.timeout || this.timeout
+
+    const parser = this.port.pipe(new Readline({ delimiter: '\r\n' }))
+    parser.on('data', this.onLineData.bind(this))
 
     if (!port.isOpen)
       port.open(function (err) {
-        if (err) return console.log('Error opening port: ', err.message)
-
-        this.createParser()
+        if (err) throw new Error(`Error opening port: ${err.message}`)
       })
-    else
-      this.createParser()
   }
 
   lastline = ''
   onLineData(line) {
-    if (this.echo) console.log(`-> ${line}`)
-
-    this.lastline = line
+    this.emit("read", line);
 
     switch (line) {
       case "READY":
-        this.emit("ready");
-        break;
+        setImmediate(function () {
+          this.emit("ready");
+        }.bind(this))
+        return;
+      case "ERROR Auto renew failed":
+        this.lastline = null
+        return;
     }
+
+    this.lastline = line
   }
 
-  writeLine(line) {
-    this.lastline = ''
+  async writeLineAndWait(line) {
+    this.lastline = null
 
     this.port.write(`${line}\n`, function (err) { if (err) throw new Error(`Error writing com port: {err.message}`) })
-    if (this.echo) console.log(`<- ${line}`)
+    this.emit("write", line);
 
-    return new Promise(async function (resolve, reject) {
-      setTimeout(function () {
-        if (this.lastline)
-          resolve(this.lastline)
-      }.bind(this), 0)
-    }.bind(this));
+    const that = this
+    return new Promise((resolve, reject) => {
+      const start = new Date().getTime()
+      const check = () => {
+        if (that.lastline && that.lastline.length) {
+          if (that.lastline.startsWith("ERROR"))
+            return reject(new Error(that.lastline.substring("ERROR".length).trim()))
+          return resolve(that.lastline)
+        }
+        else if (new Date().getTime() - start > this.timeout) {
+          return reject(new Error("Timeout"))
+        }
+        else
+          setImmediate(check)
+      }
+      setImmediate(check)
+    })
   }
 
-  async setNodeId(nodeid) {
-    return await this.writeLine(`NODEID 0x${nodeid.toString(16)}`);
-  }
+  async setNodeId(nodeid) { return this.writeLineAndWait(`NODEID 0x${nodeid.toString(16).padStart(2, '0')}`) }
+  async setChannel(channel) { return this.writeLineAndWait(`CHANNEL ${channel}`) }
+  async setSpeed(speed) { return this.writeLineAndWait(`SPEED ${speed}`) }
 
-  async begin() {
-    return await this.writeLine(`BEGIN`);
-  }
+  async getAny(name) { return await this.writeLineAndWait(name).then((res) => res.replace(name, '').trim()).catch((error) => { throw error }) }
+  async getNodeId() { return this.getAny('NODEID') }
+  async getChannel() { return this.getAny('CHANNEL') }
+  async getSpeed() { return this.getAny('SPEED') }
+  async getVersion() { return this.getAny('VERSION') }
+  async getUptime() { return this.getAny('UPTIME') }
+
+  async begin() { return this.writeLineAndWait(`BEGIN`); }
+  //async send() { return this.writeLineAndWait(`SEND`); }
+  async check() { return this.writeLineAndWait(`CHECK`); }
+  async renew() { return this.writeLineAndWait(`RENEW`); }
+  async reset() { return this.writeLineAndWait(`RESET`); }
 }
 module.exports = RF24MeshSerialNode;
