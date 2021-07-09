@@ -11,5 +11,16 @@
   "license": "ISC",
   "dependencies": {
     "serialport": "^9.0.7"
+  },
+  "pkg": {
+    "scripts": [
+      "*.js",
+      "node_modules/@serialport/bindings/build/Release/bindings.node"
+    ],
+    "assets": "views/**/*",
+    "targets": [
+      "latest-win-x64"
+    ],
+    "outputPath": "../dist"
   }
 }
