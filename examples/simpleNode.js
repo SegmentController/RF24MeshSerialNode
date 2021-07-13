@@ -1,6 +1,6 @@
 const RF24MeshSerialNode = require('../RF24MeshSerialNode.js')
 
-//let node = null;
+let bootcount = 0
 
 RF24MeshSerialNode.find({
   inittimeout: 2500,
@@ -9,120 +9,53 @@ RF24MeshSerialNode.find({
   if (node) {
     console.log("FOUND: " + node.portnumber);
 
-    await node.setNodeId(0)
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
+    node.on('newnode', async () => {
+      console.log("New node connected. Nodes: " + await node.getNodelist());
+    })
 
-    await node.setChannel(90)
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.setSpeed(0)
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getNodeId()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getChannel()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getSpeed()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
     await node.getVersion()
+      .then((version) => console.log("Version: " + version))
+      .catch((error) => console.log("Version ERROR: " + error.message))
 
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
+    async function startup() {
+      await node.setNodeId(0)
+        .then(() => node.setSpeed(0))
+        .then(() => node.begin())
+        .then(() => console.log("Started..."))
+        .catch((error) => console.log("Startup ERROR: " + error.message))
+    }
 
-    await node.getUptime()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.begin()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-  }
-  else
-    console.log("NOT FOUND");
-});
-
-
-return;
-
-try {
-  node = new RF24MeshSerialNode('COM14',
-    {
-      inittimeout: 2500,
-      cmdtimeout: 250,
+    bootcount++;
+    node.on('reready', () => {
+      bootcount++;
+      console.log(`Bootcount: ${bootcount}`);
+      startup();
     });
 
-  node.on('error', (error) => {
-    console.log("ErrorX:" + error);
-  })
+    startup()
 
-  node.on('nodevice', () => { console.log("NO DEVICE") })
+    setInterval(async () => {
+      await node.getUptime()
+        .then((uptime) => console.log("Uptime: " + uptime))
+        .catch((error) => console.log("Uptime ERROR: " + error.message))
+    }, 2500);
 
-  node.on('ready', async () => {
+    setInterval(async () => {
+      let bufarray = [];
+      for (let i = 0; i < Math.random() * 10; i++)
+        bufarray.push(Math.random() * 256)
+      await node.send(5, Math.random() * 127, Buffer.from(bufarray))
+        .then(() => console.log("Sent"))
+        .catch((error) => console.log("Send ERROR: " + error.message))
+    }, 150);
 
-    await node.setNodeId(0)
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
+    setInterval(async () => {
+      await node.reset()
+        .then(() => console.log("Reset sent"))
+        .catch((error) => console.log("ERROR: " + error.message))
+    }, 30 * 1000);
+  }
+  //node.on('read', (line) => console.log('p->' + line))
+  //node.on('write', (line) => console.log('p<-' + line))
+});
 
-    await node.setChannel(90)
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.setSpeed(0)
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getNodeId()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getChannel()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getSpeed()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-    await node.getVersion()
-
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    await node.getUptime()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    // try {
-    //   const a = await node.setNodeId(200)
-    //   console.log("OK: " + a)
-    // }
-    // catch (error) { console.log("Error: " + error.message) }
-
-    await node.begin()
-      .then((res) => console.log("OK: " + res))
-      .catch((error) => console.log("ERROR: " + error.message))
-
-    // await node.check()
-    //   .then((res) => console.log("OK: " + res))
-    //   .catch((error) => console.log("ERROR: " + error.message))
-
-    // await node.reset()
-    //   .then((res) => console.log("OK: " + res))
-    //   .catch((error) => console.log("ERROR: " + error.message))
-
-  })
-}
-catch (exception) {
-  console.log("HIBA: " + exception.message);
-}
-
-//node.on('read', (line) => console.log('p->' + line))
-//node.on('write', (line) => console.log('p<-' + line))
