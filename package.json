@@ -1,5 +1,5 @@
 {
-  "name": "RF24MeshSerialNode",
+  "name": "rf24meshserialnode",
   "version": "0.9.0",
   "description": "Node.js library for RF24MeshSerial",
   "main": "index.js",
@@ -11,16 +11,5 @@
   "license": "ISC",
   "dependencies": {
     "serialport": "^9.0.7"
-  },
-  "pkg": {
-    "scripts": [
-      "*.js",
-      "node_modules/@serialport/bindings/build/Release/bindings.node"
-    ],
-    "assets": "views/**/*",
-    "targets": [
-      "latest-win-x64"
-    ],
-    "outputPath": "../dist"
   }
 }
