@@ -70,15 +70,15 @@ class RF24MeshSerialNode extends EventEmitter {
 
                 let bytes = []
                 for (let i = 0; i < size; i++)
-                  bytes.push(parseInt(Number(data.substring(i * 2, 2)), 10))
+                  bytes.push(parseInt(data.substring(i * 2, i * 2 + 2), 16))
                 return Buffer.from(bytes)
               }
             return null
           }
           this.emit(
             "receive",
-            parseInt(Number(parts[1]), 10),
-            parseInt(Number(parts[2]), 10),
+            parseInt(parts[1], 16),
+            parseInt(parts[2], 16),
             CreateBuffer())
         }
         return;
@@ -95,6 +95,7 @@ class RF24MeshSerialNode extends EventEmitter {
     this.port.on('close', function () {
       this.isopened = false
       this.emit("close")
+      this.removeAllListeners();
     }.bind(this))
 
     this.port.on("error", function (err) {
@@ -111,9 +112,7 @@ class RF24MeshSerialNode extends EventEmitter {
   async writeLine(line, wait = true) {
     this.lastline = null
 
-    this.port.write(`${line}\n`, function (err) {
-      if (err) throw new Error(`Error writing com port: {err.message}`)
-    })
+    this.port.write(`${line}\n`)
     this.emit("write", line)
 
     const that = this
@@ -172,7 +171,7 @@ class RF24MeshSerialNode extends EventEmitter {
 
     const result = []
     for (const node of nodesstr.split(' '))
-      result.push(parseInt(Number(node), 10))
+      result.push(parseInt(node, 16))
     return result;
   }
 
