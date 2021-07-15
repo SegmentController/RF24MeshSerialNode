@@ -13,6 +13,10 @@ RF24MeshSerialNode.find({
       console.log("New node connected. Nodes: " + await node.getNodelist())
     })
 
+    node.on('receive', async (from, type, buffer) => {
+      console.log(`Data arrived from ${from} with type ${type}` + buffer.toString())
+    })
+
     await node.getVersion()
       .then((version) => console.log("Version: " + version))
       .catch((error) => console.log("Version ERROR: " + error.message))

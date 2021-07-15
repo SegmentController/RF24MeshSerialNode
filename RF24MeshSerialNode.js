@@ -59,6 +59,31 @@ class RF24MeshSerialNode extends EventEmitter {
           return
       }
 
+      if (line.startsWith("RECEIVE ")) {
+        const parts = line.split(' ')
+        if (parts.length == 3 || parts.length == 4) {
+          function CreateBuffer() {
+            if (parts.length == 4)
+              if (parts[3].startsWith("0x") && (parts[3].length % 2) == 0) {
+                const data = parts[3].substring(2)
+                const size = data.length / 2
+
+                let bytes = []
+                for (let i = 0; i < size; i++)
+                  bytes.push(parseInt(Number(data.substring(i * 2, 2)), 10))
+                return Buffer.from(bytes)
+              }
+            return null
+          }
+          this.emit(
+            "receive",
+            parseInt(Number(parts[1]), 10),
+            parseInt(Number(parts[2]), 10),
+            CreateBuffer())
+        }
+        return;
+      }
+
       this.lastline = line
     }.bind(this))
 
