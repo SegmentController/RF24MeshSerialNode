@@ -3,7 +3,6 @@
   "version": "0.9.1",
   "description": "Node.js library for RF24MeshSerial",
 	"repository": "https://github.com/BCsabaEngine/RF24MeshSerialNode",
-  "type": "module",
   "exports": "./RF24MeshSerialNode.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
