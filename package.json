@@ -1,6 +1,6 @@
 {
   "name": "rf24meshserialnode",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Node.js library for RF24MeshSerial",
 	"repository": "https://github.com/BCsabaEngine/RF24MeshSerialNode",
   "exports": "./RF24MeshSerialNode.js",
@@ -12,6 +12,6 @@
   "author": "BCsabaEngine",
   "license": "ISC",
   "dependencies": {
-    "serialport": "^9.0.7"
+    "serialport": "^9.2.0"
   }
 }
