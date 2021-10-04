@@ -12,6 +12,6 @@
   "author": "BCsabaEngine",
   "license": "ISC",
   "dependencies": {
-    "serialport": "^9.2.3"
+    "serialport": "^9.2.4"
   }
 }
