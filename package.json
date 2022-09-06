@@ -1,16 +1,33 @@
 {
   "name": "rf24meshserialnode",
-  "version": "0.9.4",
   "description": "Node.js library for RF24MeshSerial",
-	"repository": "https://github.com/BCsabaEngine/RF24MeshSerialNode",
+  "author": "BCsabaEngine <csaba@balazs-magyar.hu>",
+  "version": "0.9.4",
+  "license": "ISC",
   "exports": "./RF24MeshSerialNode.js",
   "main": "RF24MeshSerialNode.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "engines": {
+    "node": ">=12",
+    "npm": ">=7"
   },
-  "keywords": ["nodejs", "rf24", "rf24mesh", "rf24meshserial", "serialbridge"],
-  "author": "BCsabaEngine",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SegmentController/RF24MeshSerialNode"
+  },
+  "bugs": {
+    "url": "https://github.com/SegmentController/RF24MeshSerialNode/issues"
+  },
+  "homepage": "https://github.com/SegmentController/RF24MeshSerialNode",
+  "scripts": {
+    "npm-publish": "npm version patch && npm publish && git push"
+  },
+  "keywords": [
+    "nodejs",
+    "rf24",
+    "rf24mesh",
+    "rf24meshserial",
+    "serialbridge"
+  ],
   "dependencies": {
     "serialport": "^10.4.0"
   }
