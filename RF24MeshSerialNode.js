@@ -1,7 +1,7 @@
 const EventEmitter = require('events')
 
-const SerialPort = require('serialport')
-const Readline = require('@serialport/parser-readline')
+const { SerialPort } = require('serialport')
+const { ReadlineParser } = require('@serialport/parser-readline')
 
 class RF24MeshSerialNode extends EventEmitter {
   static async find(options, foundcb) {
@@ -25,14 +25,14 @@ class RF24MeshSerialNode extends EventEmitter {
 
     this.portnumber = portnumber
     this.cmdtimeout = options.cmdtimeout || this.cmdtimeout
-    this.port = new SerialPort(portnumber, { baudRate: 115200 })
+    this.port = new SerialPort({ path: this.portnumber, baudRate: 115200 })
 
     const inittimer = setTimeout(function () {
       if (!this.isready)
         this.emit("nodevice")
     }.bind(this), options.inittimeout || 2500)
 
-    const parser = this.port.pipe(new Readline({ delimiter: '\r\n' }))
+    const parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }))
     parser.on('data', function (line) {
       this.emit("read", line)
 
