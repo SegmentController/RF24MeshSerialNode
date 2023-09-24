@@ -1,61 +1,70 @@
-const EventEmitter = require('events')
+import EventEmitter from 'events'
 
-const { SerialPort } = require('serialport')
-const { ReadlineParser } = require('@serialport/parser-readline')
+import { SerialPort } from 'serialport'
+import { ReadlineParser } from '@serialport/parser-readline'
 
-class RF24MeshSerialNode extends EventEmitter {
-  static async find(options, foundcb) {
+export type RF24MeshSerialNodeOptions = {
+  cmdtimeout: number,
+  inittimeout: number,
+}
+
+export class RF24MeshSerialNode extends EventEmitter {
+  static async find(options: RF24MeshSerialNodeOptions, foundcb: (node: RF24MeshSerialNode) => void) {
     for (const port of await SerialPort.list()) {
       const serialnode = new RF24MeshSerialNode(port.path, options)
 
-      serialnode.on('error', (error) => serialnode.close())
+      serialnode.on('error', () => serialnode.close())
       serialnode.on('nodevice', () => serialnode.close())
       serialnode.on('ready', () => foundcb(serialnode))
     }
   }
 
-  port = null
-  portnumber = null
-  cmdtimeout = 250
-  isopened = false
-  isready = false
-  lastline = ''
-  constructor(portnumber, options) {
+  private port: SerialPort
+  private portnumber: string
+  private cmdtimeout: number = 250
+  private isopened: boolean = false
+  private isready: boolean = false
+  private lastline: string = ''
+  private inittimer: number = 0;
+
+  constructor(portnumber: string, options: RF24MeshSerialNodeOptions) {
     super()
 
     this.portnumber = portnumber
     this.cmdtimeout = options.cmdtimeout || this.cmdtimeout
     this.port = new SerialPort({ path: this.portnumber, baudRate: 115200 })
 
-    const inittimer = setTimeout(function () {
-      if (!this.isready)
-        this.emit("nodevice")
-    }.bind(this), options.inittimeout || 2500)
+    const that = this;
+
+    this.inittimer = setTimeout(function () {
+      if (!that.isready)
+        that.emit("nodevice")
+    }, options.inittimeout || 2500) as unknown as number;
 
     const parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }))
-    parser.on('data', function (line) {
-      this.emit("read", line)
+    parser.on('data', function (line: string) {
+      that.emit("read", line)
 
       switch (line) {
         case "RF24MESHSERIAL READY":
           setImmediate(function () {
-            clearTimeout(this.inittimer)
-            if (!this.isready) {
-              this.isready = true
-              this.emit("ready")
+            clearTimeout(that.inittimer)
+            if (!that.isready) {
+              that.isready = true
+              that.emit("ready")
             }
             else
-              this.emit("reready")
-          }.bind(this))
+              that.emit("reready")
+          })
           return
 
         case "ERROR Auto renew failed":
-          this.lastline = null
+          that.lastline = ''
           return
 
         case "NEWNODE":
-          this.emit("newnode")
-          this.lastline = null
+          that.emit("newnode")
+          that.lastline = ''
           return
       }
 
@@ -64,7 +73,7 @@ class RF24MeshSerialNode extends EventEmitter {
         if (parts.length == 3 || parts.length == 4) {
           function CreateBuffer() {
             if (parts.length == 4)
-              if (parts[3].startsWith("0x") && (parts[3].length % 2) == 0) {
+              if (parts[3]?.startsWith("0x") && (parts[3].length % 2) == 0) {
                 const data = parts[3].substring(2)
                 const size = data.length / 2
 
@@ -75,33 +84,34 @@ class RF24MeshSerialNode extends EventEmitter {
               }
             return null
           }
-          this.emit(
-            "receive",
-            parseInt(parts[1], 16),
-            parseInt(parts[2], 16),
-            CreateBuffer())
+          if (parts.length > 2)
+            that.emit(
+              "receive",
+              parseInt(parts[1] ?? '', 16),
+              parseInt(parts[2] ?? '', 16),
+              CreateBuffer())
         }
         return;
       }
 
-      this.lastline = line
-    }.bind(this))
+      that.lastline = line
+    })
 
     this.port.on("open", function () {
-      this.isopened = true
-      this.emit("open")
-    }.bind(this))
+      that.isopened = true
+      that.emit("open")
+    })
 
     this.port.on('close', function () {
-      this.isopened = false
-      this.emit("close")
-      this.removeAllListeners();
-    }.bind(this))
+      that.isopened = false
+      that.emit("close")
+      that.removeAllListeners();
+    })
 
     this.port.on("error", function (err) {
-      this.isopened = false
-      this.emit("error", err)
-    }.bind(this))
+      that.isopened = false
+      that.emit("error", err)
+    })
   }
 
   close() {
@@ -109,15 +119,15 @@ class RF24MeshSerialNode extends EventEmitter {
       this.port.close()
   }
 
-  async writeLine(line, wait = true) {
-    this.lastline = null
+  async writeLine(line: string, wait = true): Promise<string> {
+    this.lastline = ''
 
     this.port.write(`${line}\n`)
     this.emit("write", line)
 
     const that = this
     return new Promise((resolve, reject) => {
-      if (!wait) return resolve()
+      if (!wait) return resolve('')
       const start = new Date().getTime()
       const waiter = () => {
         if (that.lastline && that.lastline.length) {
@@ -135,7 +145,7 @@ class RF24MeshSerialNode extends EventEmitter {
     })
   }
 
-  byteToHex(d, padding = 2) {
+  byteToHex(d: number, padding = 2) {
     d = Math.round(d)
     let hex = Number(d).toString(16).toUpperCase()
     while (hex.length < padding)
@@ -143,7 +153,7 @@ class RF24MeshSerialNode extends EventEmitter {
     return '0x' + hex
   }
 
-  bufferToHex(b) {
+  bufferToHex(b: Buffer) {
     let hex = ''
     for (let v of b) {
       let vhex = Number(v).toString(16).toUpperCase()
@@ -154,11 +164,11 @@ class RF24MeshSerialNode extends EventEmitter {
     return '0x' + hex
   }
 
-  async setNodeId(nodeid) { return this.writeLine(`NODEID 0x${nodeid.toString(16).padStart(2, '0')}`) }
-  async setChannel(channel) { return this.writeLine(`CHANNEL ${channel}`) }
-  async setSpeed(speed) { return this.writeLine(`SPEED ${speed}`) }
+  async setNodeId(nodeid: number) { return this.writeLine(`NODEID 0x${nodeid.toString(16).padStart(2, '0')}`) }
+  async setChannel(channel: number) { return this.writeLine(`CHANNEL ${channel}`) }
+  async setSpeed(speed: number) { return this.writeLine(`SPEED ${speed}`) }
 
-  async getAny(name) { return await this.writeLine(name).then((res) => res.replace(name, '').trim()).catch((error) => { throw error }) }
+  async getAny(name: string) { return await this.writeLine(name).then((res) => res.replace(name, '').trim()).catch((error) => { throw error }) }
   async getNodeId() { return this.getAny('NODEID') }
   async getChannel() { return this.getAny('CHANNEL') }
   async getSpeed() { return this.getAny('SPEED') }
@@ -180,7 +190,6 @@ class RF24MeshSerialNode extends EventEmitter {
   async renew() { return this.writeLine('RENEW') }
   async reset() { return this.writeLine('RESET', false) }
 
-  async send(targetnode, msgtype, databuffer) { return this.writeLine(`SEND ${this.byteToHex(targetnode)} ${this.byteToHex(msgtype)} ${this.bufferToHex(databuffer)}`) }
+  async send(targetnode: number, msgtype: number, databuffer: Buffer) { return this.writeLine(`SEND ${this.byteToHex(targetnode)} ${this.byteToHex(msgtype)} ${this.bufferToHex(databuffer)}`) }
 
 }
-module.exports = RF24MeshSerialNode
