@@ -42,3 +42,7 @@ typings/
 # VScode runtime config
 .vscode/*
 !.vscode/*.code-snippets
+
+# Compiled files
+*.js
+*.d.ts
