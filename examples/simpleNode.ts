@@ -1,7 +1,7 @@
-const RF24MeshSerialNode = require('../RF24MeshSerialNode.js')
+import { RF24MeshSerialNode } from '../src/RF24MeshSerialNode';
 
 let bootcount = 0
-let globalnode = null
+let globalnode: RF24MeshSerialNode | undefined = undefined;
 
 function StartRF24MeshNode() {
   RF24MeshSerialNode.find({
@@ -11,10 +11,10 @@ function StartRF24MeshNode() {
     if (node) {
       globalnode = node;
 
-      console.log("FOUND: " + node.portnumber)
+      console.log("FOUND: " + node.getPortnumber())
 
       node.on('close', async () => {
-        globalnode = null;
+        globalnode = undefined;
         console.log("Disconnected")
       })
 
@@ -22,8 +22,8 @@ function StartRF24MeshNode() {
         console.log("New node connected. Nodes: " + await node.getNodelist())
       })
 
-      node.on('receive', async (from, type, buffer) => {
-        let bvalue = [];
+      node.on('receive', async (from: number, type: number, buffer: Buffer) => {
+        const bvalue: string[] = [];
         for (const value of buffer)
           bvalue.push(value.toString(16))
 
@@ -79,7 +79,7 @@ function StartRF24MeshNode() {
 }
 
 setInterval(async () => {
-  if (!globalnode || !globalnode.isopened)
+  if (!globalnode || !globalnode.isOpened())
     return
 
   await globalnode.send(5, 0, Buffer.from([62, 1, 2]))
