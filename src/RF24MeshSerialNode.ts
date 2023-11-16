@@ -27,6 +27,9 @@ export class RF24MeshSerialNode extends EventEmitter {
   private lastline: string = ''
   private inittimer: number = 0;
 
+  public getPortnumber(): string { return this.portnumber; }
+  public isOpened(): boolean { return this.isopened; }
+
   constructor(portnumber: string, options: RF24MeshSerialNodeOptions) {
     super()
 

@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/SegmentController/RF24MeshSerialNode",
   "scripts": {
+    "dev": "nodemon examples/simpleNode.ts",
     "clean": "tsc --build --clean",
     "build": "tsc --build --clean && tsc --build --force",
     "npm-publish-patch": "npm run build && npm version patch && npm publish && npm run clean && git push",
@@ -40,7 +41,7 @@
     "serialport": "^12.0.0"
   },
   "devDependencies": {
-    "@types/node": "20.6.5",
+    "@types/node": "20.9.1",
     "nodemon": "^3.0.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
