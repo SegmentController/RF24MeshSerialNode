@@ -2,7 +2,7 @@
   "name": "rf24meshserialnode",
   "description": "Node.js library for RF24MeshSerial",
   "author": "BCsabaEngine <csaba@balazs-magyar.hu>",
-  "version": "0.9.6",
+  "version": "0.10.0",
   "license": "ISC",
   "exports": "./dist/RF24MeshSerialNode.js",
   "main": "./dist/RF24MeshSerialNode.js",
