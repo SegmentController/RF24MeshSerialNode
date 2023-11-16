@@ -21,7 +21,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "extendedDiagnostics": true,
+    "extendedDiagnostics": false,
     "incremental": false,
     "allowJs": false,
     "typeRoots": [
@@ -29,10 +29,11 @@
     ],
     "rootDirs": [
       "./"
-    ]
+    ],
+    "outDir": "dist"
   },
   "include": [
-    "./"
+    "./src"
   ],
   "exclude": [
     "test",

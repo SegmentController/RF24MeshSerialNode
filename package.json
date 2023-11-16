@@ -4,12 +4,12 @@
   "author": "BCsabaEngine <csaba@balazs-magyar.hu>",
   "version": "0.9.6",
   "license": "ISC",
-  "exports": "./RF24MeshSerialNode.js",
-  "main": "./RF24MeshSerialNode.js",
-  "types": "./RF24MeshSerialNode.d.ts",
+  "exports": "./dist/RF24MeshSerialNode.js",
+  "main": "./dist/RF24MeshSerialNode.js",
+  "types": "./dist/RF24MeshSerialNode.d.ts",
   "engines": {
-    "node": ">=12",
-    "npm": ">=7"
+    "node": ">=18",
+    "npm": ">=9"
   },
   "files": [
     "**/*.js",
@@ -26,7 +26,8 @@
   "scripts": {
     "clean": "tsc --build --clean",
     "build": "tsc --build --clean && tsc --build --force",
-    "npm-publish": "npm version patch && npm publish && git push"
+    "npm-publish-patch": "npm run build && npm version patch && npm publish && npm run clean && git push",
+    "npm-publish-minor": "npm run build && npm version minor && npm publish && npm run clean && git push"
   },
   "keywords": [
     "nodejs",
