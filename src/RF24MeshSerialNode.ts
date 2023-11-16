@@ -77,7 +77,7 @@ export class RF24MeshSerialNode extends EventEmitter {
                 const data = parts[3].substring(2)
                 const size = data.length / 2
 
-                let bytes = []
+                let bytes: number[] = []
                 for (let i = 0; i < size; i++)
                   bytes.push(parseInt(data.substring(i * 2, i * 2 + 2), 16))
                 return Buffer.from(bytes)
@@ -114,7 +114,7 @@ export class RF24MeshSerialNode extends EventEmitter {
     })
   }
 
-  close() {
+  close(): void {
     if (this.port && this.isopened)
       this.port.close()
   }
@@ -145,7 +145,7 @@ export class RF24MeshSerialNode extends EventEmitter {
     })
   }
 
-  byteToHex(d: number, padding = 2) {
+  byteToHex(d: number, padding = 2): string {
     d = Math.round(d)
     let hex = Number(d).toString(16).toUpperCase()
     while (hex.length < padding)
@@ -153,7 +153,7 @@ export class RF24MeshSerialNode extends EventEmitter {
     return '0x' + hex
   }
 
-  bufferToHex(b: Buffer) {
+  bufferToHex(b: Buffer): string {
     let hex = ''
     for (let v of b) {
       let vhex = Number(v).toString(16).toUpperCase()
@@ -164,18 +164,18 @@ export class RF24MeshSerialNode extends EventEmitter {
     return '0x' + hex
   }
 
-  async setNodeId(nodeid: number) { return this.writeLine(`NODEID 0x${nodeid.toString(16).padStart(2, '0')}`) }
-  async setChannel(channel: number) { return this.writeLine(`CHANNEL ${channel}`) }
-  async setSpeed(speed: number) { return this.writeLine(`SPEED ${speed}`) }
+  async setNodeId(nodeid: number): Promise<string> { return this.writeLine(`NODEID 0x${nodeid.toString(16).padStart(2, '0')}`) }
+  async setChannel(channel: number): Promise<string> { return this.writeLine(`CHANNEL ${channel}`) }
+  async setSpeed(speed: number): Promise<string> { return this.writeLine(`SPEED ${speed}`) }
 
-  async getAny(name: string) { return await this.writeLine(name).then((res) => res.replace(name, '').trim()).catch((error) => { throw error }) }
-  async getNodeId() { return this.getAny('NODEID') }
-  async getChannel() { return this.getAny('CHANNEL') }
-  async getSpeed() { return this.getAny('SPEED') }
-  async getVersion() { return this.getAny('VERSION') }
-  async getUptime() { return this.getAny('UPTIME') }
+  async getAny(name: string): Promise<string> { return await this.writeLine(name).then((res) => res.replace(name, '').trim()).catch((error) => { throw error }) }
+  async getNodeId(): Promise<string> { return this.getAny('NODEID') }
+  async getChannel(): Promise<string> { return this.getAny('CHANNEL') }
+  async getSpeed(): Promise<string> { return this.getAny('SPEED') }
+  async getVersion(): Promise<string> { return this.getAny('VERSION') }
+  async getUptime(): Promise<string> { return this.getAny('UPTIME') }
 
-  async getNodelist() {
+  async getNodelist(): Promise<number[]> {
     const nodesstr = await this.getAny('NODELIST')
     if (!nodesstr) return []
 
@@ -185,11 +185,10 @@ export class RF24MeshSerialNode extends EventEmitter {
     return result;
   }
 
-  async begin() { return this.writeLine('BEGIN') }
-  async check() { return this.writeLine('CHECK') }
-  async renew() { return this.writeLine('RENEW') }
-  async reset() { return this.writeLine('RESET', false) }
+  async begin(): Promise<string> { return this.writeLine('BEGIN') }
+  async check(): Promise<string> { return this.writeLine('CHECK') }
+  async renew(): Promise<string> { return this.writeLine('RENEW') }
+  async reset(): Promise<string> { return this.writeLine('RESET', false) }
 
-  async send(targetnode: number, msgtype: number, databuffer: Buffer) { return this.writeLine(`SEND ${this.byteToHex(targetnode)} ${this.byteToHex(msgtype)} ${this.bufferToHex(databuffer)}`) }
-
+  async send(targetnode: number, msgtype: number, databuffer: Buffer): Promise<string> { return this.writeLine(`SEND ${this.byteToHex(targetnode)} ${this.byteToHex(msgtype)} ${this.bufferToHex(databuffer)}`) }
 }
