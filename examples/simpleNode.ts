@@ -6,12 +6,13 @@ let globalnode: RF24MeshSerialNode | undefined = undefined;
 function StartRF24MeshNode() {
   RF24MeshSerialNode.find({
     inittimeout: 2500,
-    cmdtimeout: 250
+    cmdtimeout: 250,
+    checkinterval: 500,
   }, async function (node) {
     if (node) {
       globalnode = node;
 
-      console.log("FOUND: " + node.getPortnumber())
+      console.log("Device found: " + node.getPortnumber())
 
       node.on('close', async () => {
         globalnode = undefined;
@@ -81,10 +82,11 @@ function StartRF24MeshNode() {
 setInterval(async () => {
   if (!globalnode || !globalnode.isOpened())
     return
-
-  await globalnode.send(5, 0, Buffer.from([62, 1, 2]))
-    .then(() => console.log("Sent"))
-    .catch((error) => console.log("Send ERROR: " + error.message))
+  /*
+    await globalnode.send(5, 0, Buffer.from([62, 1, 2]))
+      .then(() => console.log("Sent"))
+      .catch((error) => console.log("Send ERROR: " + error.message))
+  */
 }, 150)
 
 StartRF24MeshNode()

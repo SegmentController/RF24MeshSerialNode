@@ -6,6 +6,7 @@ import { ReadlineParser } from '@serialport/parser-readline'
 export type RF24MeshSerialNodeOptions = {
   cmdtimeout: number,
   inittimeout: number,
+  checkinterval: number,
 }
 
 export class RF24MeshSerialNode extends EventEmitter {
@@ -26,6 +27,7 @@ export class RF24MeshSerialNode extends EventEmitter {
   private isready: boolean = false
   private lastline: string = ''
   private inittimer: number = 0;
+  private checktimer: number = 0;
 
   public getPortnumber(): string { return this.portnumber; }
   public isOpened(): boolean { return this.isopened; }
@@ -44,70 +46,76 @@ export class RF24MeshSerialNode extends EventEmitter {
         that.emit("nodevice")
     }, options.inittimeout || 2500) as unknown as number;
 
-    const parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }))
-    parser.on('data', function (line: string) {
-      that.emit("read", line)
-
-      switch (line) {
-        case "RF24MESHSERIAL READY":
-          setImmediate(function () {
-            clearTimeout(that.inittimer)
-            if (!that.isready) {
-              that.isready = true
-              that.emit("ready")
-            }
-            else
-              that.emit("reready")
-          })
-          return
-
-        case "ERROR Auto renew failed":
-          that.lastline = ''
-          return
-
-        case "NEWNODE":
-          that.emit("newnode")
-          that.lastline = ''
-          return
-      }
-
-      if (line.startsWith("RECEIVE ")) {
-        const parts = line.split(' ')
-        if (parts.length == 3 || parts.length == 4) {
-          function CreateBuffer() {
-            if (parts.length == 4)
-              if (parts[3]?.startsWith("0x") && (parts[3].length % 2) == 0) {
-                const data = parts[3].substring(2)
-                const size = data.length / 2
-
-                let bytes: number[] = []
-                for (let i = 0; i < size; i++)
-                  bytes.push(parseInt(data.substring(i * 2, i * 2 + 2), 16))
-                return Buffer.from(bytes)
-              }
-            return null
-          }
-          if (parts.length > 2)
-            that.emit(
-              "receive",
-              parseInt(parts[1] ?? '', 16),
-              parseInt(parts[2] ?? '', 16),
-              CreateBuffer())
-        }
-        return;
-      }
-
-      that.lastline = line
-    })
-
     this.port.on("open", function () {
       that.isopened = true
+
+      const parser = that.port.pipe(new ReadlineParser({ delimiter: '\r\n' }))
+      parser.on('data', function (line: string) {
+        that.emit("read", line)
+
+        switch (line) {
+          case "RF24MESHSERIAL READY":
+            setImmediate(function () {
+              clearTimeout(that.inittimer)
+              if (!that.isready) {
+                that.isready = true
+                that.emit("ready")
+              }
+              else
+                that.emit("reready")
+            })
+            return
+
+          case "ERROR Auto renew failed":
+            that.lastline = ''
+            return
+
+          case "NEWNODE":
+            that.emit("newnode")
+            that.lastline = ''
+            return
+        }
+
+        if (line.startsWith("RECEIVE ")) {
+          const parts = line.split(' ')
+          if (parts.length == 3 || parts.length == 4) {
+            function CreateBuffer() {
+              if (parts.length == 4)
+                if (parts[3]?.startsWith("0x") && (parts[3].length % 2) == 0) {
+                  const data = parts[3].substring(2)
+                  const size = data.length / 2
+
+                  let bytes: number[] = []
+                  for (let i = 0; i < size; i++)
+                    bytes.push(parseInt(data.substring(i * 2, i * 2 + 2), 16))
+                  return Buffer.from(bytes)
+                }
+              return null
+            }
+            if (parts.length > 2)
+              that.emit(
+                "receive",
+                parseInt(parts[1] ?? '', 16),
+                parseInt(parts[2] ?? '', 16),
+                CreateBuffer())
+          }
+          return;
+        }
+
+        that.lastline = line
+      })
+
+      that.checktimer = setInterval(function () {
+        that.port.write('\n');
+      }, options.checkinterval || 500) as unknown as number;
+
       that.emit("open")
     })
 
     this.port.on('close', function () {
       that.isopened = false
       that.emit("close")
+      clearInterval(that.checktimer);
       that.removeAllListeners();
     })
 
